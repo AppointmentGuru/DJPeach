@@ -4,7 +4,8 @@ from __future__ import unicode_literals
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from .models import CreditCard, Transaction
+from ..models import CreditCard, Transaction
+from .utils import create_product
 
 import responses, json
 
@@ -44,28 +45,19 @@ error_response_result_data = {
     }
 }
 
-class PrepareCheckoutDataTestCase(TestCase):
-
-    def test_minimum_requirements(self):
-        pass
-
-    def test_post_data_is_added_to_request(self):
-        pass
-
-    def test_registered_cards_are_added_to_data(self):
-        pass
-
-    def test_if_user_logged_in_user_data_appeneded(self):
-        pass
-
-    def test_product_data_added_if_product_is_supplied(self):
-        pass
-
-
 class PaymentPageTestCase(TestCase):
 
+    def setUp(self):
+        self.url = reverse('payment_page')
+        self.user = get_user_model().objects.create_user('joe', 'joe@soap.com', 'pass')
+        client = Client()
+        login_result = client.login(username='joe', password='pass')
+        self.product = create_product()
+
+        self.result = client.get(self.url)
+
     def test_is_ok(self):
-        pass
+        assert self.result.status_code == 200
 
     def test_adds_any_registration_ids_that_exist_to_payload(self):
         pass

@@ -1,3 +1,7 @@
 django==1.11
 requests
 responses
+
+ipdb
+ipython
+Faker
