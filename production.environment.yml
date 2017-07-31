@@ -1,0 +1,31 @@
+docker_environment:
+  - key: DEBUG
+    value: False
+  - key: DATABASE_NAME
+    value: "{{organization}}_{{service}}"
+  - key: DATABASE_USER
+    value: "{{organization}}_{{service}}"
+  - key: DATABASE_PASSWORD
+    value: "{{postgres_passwords[service]}}"
+  - key: DATABASE_HOST
+    value: "{{postgres_db_host}}"
+  - key: ALLOWED_HOSTS
+    value: "{{docker_service}},{{service}}.{{canonical_tld}}"
+  - key: AWS_STORAGE_BUCKET_NAME
+    value: media-appointmentguru
+  - key: AWS_ACCESS_KEY_ID
+    value: "{{aws_access_key}}"
+  - key: AWS_SECRET_ACCESS_KEY
+    value: "{{aws_secret_key}}"
+  - key: PEACH_BASE_URL
+    value: "{{peach_base_url}}"
+  - key: PEACH_USER_ID
+    value: "{{peach_user_id}}"
+  - key: PEACH_PASSWORD
+    value: "{{peach_password}}"
+  - key: PEACH_ENTITY_ID
+    value: "{{prach_entity_id}}"
+  - key: PEACH_ENTITY_RECURRING_ID
+    value: "{{peach_recurring_entity_id}}"
+  - key: PEACH_RESULT_PAGE
+    value: "{{peach_results_path}}"

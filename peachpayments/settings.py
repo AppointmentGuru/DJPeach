@@ -122,9 +122,5 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 PEACH_BASE_URL = 'https://test.oppwa.com'
-PEACH_USER_ID = os.environ.get('PEACH_USER_ID')
-PEACH_PASSWORD = os.environ.get('PEACH_PASSWORD')
-PEACH_ENTITY_ID = os.environ.get('PEACH_ENTITY_ID')
-PEACH_RESULT_PAGE = os.environ.get('PEACH_RESULT_PAGE')
-PEACH_ENTITY_RECURRING_ID = os.environ.get('PEACH_ENTITY_RECURRING_ID')
 
+from .custom_settings import *

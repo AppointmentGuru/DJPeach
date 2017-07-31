@@ -1,7 +1,12 @@
 django==1.11
+gunicorn==19.7.1
+psycopg2==2.7.1
+
 requests
 responses
 
 ipdb
 ipython
 Faker
+coverage
+codacy-coverage
