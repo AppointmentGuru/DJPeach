@@ -55,7 +55,7 @@ class Product(models.Model):
     description = models.TextField(null=True, blank=True)
 
     is_recurring = models.BooleanField(default=False)
-    recurrance_rate = models.CharField(max_length=22, choices=RECURRANCE_RATES)
+    recurrance_rate = models.CharField(max_length=22, default='M', choices=RECURRANCE_RATES)
 
 class UserProduct(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)

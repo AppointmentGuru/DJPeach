@@ -1,5 +1,10 @@
 version: "3"
 services:
+  db:
+    restart: on-failure:10
+    image: postgres:9.5
+    volumes:
+      - "subscriptionguru-postgres-db-volume:/var/lib/postgresql/data"
   web:
     restart: on-failure:10
     build: .
@@ -11,3 +16,6 @@ services:
       - "8000:8000"
     env_file:
       - env.dev
+
+volumes:
+  subscriptionguru-postgres-db-volume:

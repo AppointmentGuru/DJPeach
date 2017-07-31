@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='product',
             name='recurrance_rate',
-            field=models.CharField(choices=[('M', 'Monthly'), ('A', 'Annually')], default=django.utils.timezone.now, max_length=22),
+            field=models.CharField(choices=[('M', 'Monthly'), ('A', 'Annually')], default='M', max_length=2),
             preserve_default=False,
         ),
         migrations.AlterField(
