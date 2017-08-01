@@ -10,4 +10,4 @@ services:
     volumes:
       - .:/code
     environment:
-      - CODACY_PROJECT_TOKEN=6fd78b4fd485487db968f615fc21b8c2
+      - CODACY_PROJECT_TOKEN=71ef38b94b90409b9525530ed5500cc3

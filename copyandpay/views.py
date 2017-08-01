@@ -31,7 +31,7 @@ def payment_page(request):
     product = Product.objects.first()
     data = prepare_checkout_data(request, product)
 
-    url = 'https://test.oppwa.com/v1/checkouts'
+    url = '{}/v1/checkouts'.format(peach_base_url)
     response = requests.post(url, data)
     checkout_id = response.json().get('id')
     context = {
