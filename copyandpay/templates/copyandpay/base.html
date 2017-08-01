@@ -1,7 +1,33 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 	<title>{{page_title}}</title>
+	<style>
+.container {
+	max-width:1000px;margin-left: auto; margin-right: auto;
+	padding:30px;
+	border:1px solid #eee;
+	box-shadow:0 0 10px rgba(0, 0, 0, .15);
+}
+.container .header img {
+	max-width: 300px;
+}
+.container .header {
+}
+	</style>
+	<!-- Latest compiled and minified CSS -->
+	<link
+		rel="stylesheet"
+		href="{% static "copyandpay/bootstrap/css/bootstrap.min.css" %}"  />
+	{% block head %}{% endblock %}
 <body>
-{% block body %}{% endblock %}
+	<div class='container'>
+		<div class='header' >
+			<img src='https://appointmentguru.co/assets/img/guru/appointment-logo.png' class='title' />
+			<hr/>
+		</div>
+		{% block body %}{% endblock %}
+		<div style='clear:both;' ></div>
+	</div>
 </body>
 </html>

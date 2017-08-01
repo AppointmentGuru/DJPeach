@@ -1,5 +1,60 @@
-<html>
-<body>
-<pre>{{result}}</pre>
-</body>
-</html>
+{% extends 'copyandpay/base.html' %}
+{% block head %}
+<style>
+h4 {
+	border-bottom: solid 1px #ccc;
+	padding: 10px;
+	margin: 20px;
+}
+table.basic { margin: 10px; }
+</style>
+{% endblock %}
+{% block body %}
+<div >
+	<div class='payment-result' >
+		<strong>Transaction result: {{result.result.description}}</strong>
+	</div>
+	<h4 >Billed to</h4>
+	<table class='basic' style='width:50%;' >
+		<tr>
+			<td><strong>{{result.customer.companyName}}</strong></td>
+		</tr><tr>
+			<td>{{result.customer.givenName}} {{result.customer.surname}}</td>
+		</tr><tr>
+			<td><strong>E-mail:</strong> {{result.customer.email}}</td>
+		</tr><tr>
+			<td><strong>Phone:</strong> {{result.customer.mobile}}</td>
+		</tr>
+	</table>
+	<h4>Payment Details</h4>
+	<table class='table' >
+	<thead>
+		<tr>
+			<td>Name</td>
+			<td>Quantity</td>
+			<td>Price</td>
+		</tr>
+	</thead>
+	<tbody>
+	{% for item in result.cart.items %}
+	<tr>
+		<td>{{item.name}}</td>
+		<td>{{item.quantity}}</td>
+		<td>{{result.currency}} {{item.price}}</td>
+	</tr>
+	{% endfor %}
+	</tbody>
+	<tfooter>
+		<tr>
+			<td colspan='3'>
+				<strong class='pull-right'>
+					{{result.currency}} {{result.amount}} paid with card {{result.paymentBrand}} **{{result.card.last4Digits}}
+				</strong>
+				</td>
+		</tr>
+	</tfooter>
+	</table>
+	<hr/>
+
+</div>
+{% endblock %}

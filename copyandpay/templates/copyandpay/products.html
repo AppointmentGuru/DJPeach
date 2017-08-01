@@ -3,15 +3,26 @@
 {% block body %}
 Pick a product:
 
-<table>
-{% for product in products %}
-<tr>
-	<td>
-		<a href='{% url 'payment_page' product.id %}' >
-		{{product.title}}</td>
-	<td>{{product.description}}</td>
-	<td>{{product.price}}</td>
-</tr>
-{% endfor %}
+<table class='table' >
+	<thead>
+		<tr>
+			<td>Product</td>
+			<td>Description</td>
+			<td>Price</td>
+		</tr>
+	</thead>
+	<tbody>
+	{% for product in products %}
+	<tr>
+		<td>
+			<a href='{% url 'payment_page' product.id %}' >
+			{{product.title}}
+			</a>
+		</td>
+		<td>{{product.description}}</td>
+		<td>{{product.price}}</td>
+	</tr>
+	{% endfor %}
+	</tbody>
 </table>
 {% endblock %}

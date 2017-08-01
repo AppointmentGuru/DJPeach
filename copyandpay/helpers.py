@@ -16,7 +16,7 @@ def post_to_slack(data):
         print(res)
         return res
 
-def prepare_checkout_data(request, product=None):
+def prepare_checkout_data(request, user=None, product=None):
     cards = []
     # :user/:product/:transaction
     transaction_id = str(uuid.uuid4())
@@ -41,9 +41,20 @@ def prepare_checkout_data(request, product=None):
         data['cart.items[0].price'] = price
         data['cart.items[0].originalPrice'] = price
 
-    if request.user and request.user.is_authenticated():
-        cards = CreditCard.objects.filter(user=request.user)
+    if user is not None:
+        cards = CreditCard.objects.filter(user_id=user.get('id'))
         transaction_id = '{}/{}'.format(request.user.id, transaction_id)
+
+        data['customer.givenName'] = user.get('first_name')
+        data['customer.surname'] = user.get('surname_name')
+        data['customer.mobile'] = user.get('phone_number')
+        data['customer.email'] = user.get('email')
+
+        profile = user.get('profile', None)
+        if profile is not None:
+            data['customer.companyName'] = profile.get('practice_name')
+
+
 
     data['merchantTransactionId'] = transaction_id
 

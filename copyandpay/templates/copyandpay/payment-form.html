@@ -1,6 +1,51 @@
-<script src="https://test.oppwa.com/v1/paymentWidgets.js?checkoutId={{checkout_id}}"></script>
-<form
-	action="{{result_url}}"
-	class="paymentWidgets"
-	data-brands="VISA MASTER AMEX">
-</form>
+{% extends 'copyandpay/base.html' %}
+{% block head %}
+<style>
+.col-50 {
+	width: 48%;
+	display:inline;
+	float:left;
+}
+@media (max-width: 544px) {
+  .col-50 {
+	width: 100%;
+  }
+}
+</style>
+{% endblock %}
+{% block body %}
+<div class='col-50' >
+	<table class='table' >
+		<thead>
+			<tr>
+				<th colspan="2" >{{me.first_name}} {{me.last_name}}</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>{{product.title}}</td>
+			</tr>
+		</tbody>
+		<tfooter>
+			<tr>
+				<td>
+					Total due:
+					<span class='pull-right'>{{product.currency}} {{product.price}}
+					{% if product.is_recurring %}
+					(monthly)
+					{% endif %}
+					</span>
+				</td>
+			</tr>
+		</tfooter>
+	</table>
+</div>
+<div class='col-50' >
+	<script src="https://test.oppwa.com/v1/paymentWidgets.js?checkoutId={{checkout_id}}"></script>
+	<form
+		action="{{result_url}}"
+		class="paymentWidgets"
+		data-brands="VISA MASTER AMEX">
+	</form>
+</div>
+{% endblock %}
