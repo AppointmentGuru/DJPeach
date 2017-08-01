@@ -1,5 +1,7 @@
 import os
 
+SLACK_CHANNEL = 'transactions'
+
 PEACH_USER_ID = os.environ.get('PEACH_USER_ID')
 PEACH_PASSWORD = os.environ.get('PEACH_PASSWORD')
 PEACH_ENTITY_ID = os.environ.get('PEACH_ENTITY_ID')

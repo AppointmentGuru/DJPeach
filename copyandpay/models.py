@@ -49,6 +49,9 @@ RECURRANCE_RATES = [
 
 class Product(models.Model):
 
+    def __str__(self):
+        return self.title
+
     currency = models.CharField(max_length=6)
     price = models.DecimalField(decimal_places=2, max_digits=10, default=0)
     title = models.CharField(max_length=255)
@@ -58,8 +61,20 @@ class Product(models.Model):
     recurrance_rate = models.CharField(max_length=22, default='M', choices=RECURRANCE_RATES)
 
 class UserProduct(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    user = models.CharField(max_length=128)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    card = models.ForeignKey(CreditCard, on_delete=models.SET_NULL, null=True, blank=True)
+
+    created_date = models.DateTimeField(auto_now_add=True)
+    modified_date = models.DateTimeField(auto_now=True)
+
+    def charge(self):
+        '''
+        Create a charge on a recurring product
+        '''
+        pass
 
 class Transaction(models.Model):
 
@@ -83,3 +98,4 @@ class Transaction(models.Model):
 
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
+

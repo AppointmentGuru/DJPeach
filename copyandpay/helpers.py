@@ -1,6 +1,20 @@
 from django.conf import settings
 from .models import CreditCard, Transaction
-import requests, json, uuid
+
+from slackclient import SlackClient
+import requests, json, uuid, os
+
+def post_to_slack(data):
+    token = os.environ.get('SLACK_TOKEN', None)
+    if token is not None:
+        slack_client = SlackClient(token)
+
+        channel = settings.SLACK_CHANNEL
+        print (data)
+        message = "```{}```".format(json.dumps(data, indent=2))
+        res = slack_client.api_call("chat.postMessage", channel=channel, text=message)
+        print(res)
+        return res
 
 def prepare_checkout_data(request, product=None):
     cards = []

@@ -5,18 +5,23 @@ from django.shortcuts import render
 from django.conf import settings
 
 from .models import CreditCard, Transaction, Product
-from .helpers import prepare_checkout_data, save_card, save_transaction
+from .helpers import prepare_checkout_data, save_card, save_transaction, post_to_slack
 
 import requests, json, uuid
 
-def product_purchase(request, product_id):
+def index(request):
     '''
     Purchase a product
     '''
-    pass
+    products = Product.objects.all()
+    context = {
+        "page_title": "Choose a product",
+        "products": products
+    }
+    return render(request, 'copyandpay/products.html', context=context)
 
 
-def payment_page(request):
+def payment_page(request, product_id):
     '''
     Once off payment
 
@@ -28,10 +33,10 @@ def payment_page(request):
     -d "currency=ZAR" \
     -d "paymentType=DB"
     '''
-    product = Product.objects.first()
+    product = Product.objects.get(id=product_id)
     data = prepare_checkout_data(request, product)
 
-    url = '{}/v1/checkouts'.format(peach_base_url)
+    url = '{}/v1/checkouts'.format(settings.PEACH_BASE_URL)
     response = requests.post(url, data)
     checkout_id = response.json().get('id')
     context = {
@@ -46,6 +51,11 @@ def result_page(request):
     path = request.GET.get('resourcePath')
     url = '{}{}'.format(base, path)
     payment_result = requests.get(url)
+
+    # try:
+    post_to_slack(payment_result.json())
+    # except Exception:
+    #     pass
 
     if payment_result.json().get('id', None) is not None:
         save_transaction(request.user, payment_result.json())

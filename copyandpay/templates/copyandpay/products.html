@@ -1,0 +1,17 @@
+{% extends 'copyandpay/base.html' %}
+
+{% block body %}
+Pick a product:
+
+<table>
+{% for product in products %}
+<tr>
+	<td>
+		<a href='{% url 'payment_page' product.id %}' >
+		{{product.title}}</td>
+	<td>{{product.description}}</td>
+	<td>{{product.price}}</td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}
