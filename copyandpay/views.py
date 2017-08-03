@@ -47,10 +47,11 @@ def payment_page(request, product_id):
     response = requests.post(url, data)
     checkout_id = response.json().get('id')
     context = {
+        'peach_base_url': settings.PEACH_BASE_URL,
         'result_url': settings.PEACH_RESULT_PAGE,
         'checkout_id': checkout_id,
         'me': user_data,
-        'product': product
+        'product': product,
     }
     return render(request, 'copyandpay/pay.html', context=context)
 

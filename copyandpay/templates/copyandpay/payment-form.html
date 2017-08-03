@@ -32,7 +32,8 @@
 					Total due:
 					<span class='pull-right'>{{product.currency}} {{product.price}}
 					{% if product.is_recurring %}
-					(monthly)
+						{% if product.recurrance_rate == 'M' %}(monthly){% endif %}
+						{% if product.recurrance_rate == 'A' %}(annually){% endif %}
 					{% endif %}
 					</span>
 				</td>
@@ -41,7 +42,7 @@
 	</table>
 </div>
 <div class='col-50' >
-	<script src="https://test.oppwa.com/v1/paymentWidgets.js?checkoutId={{checkout_id}}"></script>
+	<script src="{{peach_base_url}}/v1/paymentWidgets.js?checkoutId={{checkout_id}}"></script>
 	<form
 		action="{{result_url}}"
 		class="paymentWidgets"

@@ -26,7 +26,8 @@ def prepare_checkout_data(request, user=None, product=None):
         "authentication.password": settings.PEACH_PASSWORD,
         "authentication.entityId": settings.PEACH_ENTITY_RECURRING_ID,
         "createRegistration": True,
-        "paymentType": "DB"
+        "paymentType": "DB",
+        "recurringType": "INITIAL",
     }
 
     if product is not None:
@@ -57,12 +58,11 @@ def prepare_checkout_data(request, user=None, product=None):
 
 
     data['merchantTransactionId'] = transaction_id
-
     for index, card in enumerate(cards):
         key = 'registrations[{}].id'.format(index)
         data[key] = card.registration_id
 
-
+    print (data)
     return data
 
 def save_card(user, registration_id, data):
