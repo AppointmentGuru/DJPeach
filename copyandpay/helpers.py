@@ -63,20 +63,24 @@ def prepare_checkout_data(request, user=None, product=None):
         key = 'registrations[{}].id'.format(index)
         data[key] = card.registration_id
 
-    print (data)
     return data
 
 def save_card(user, registration_id, data):
-    card = {
-        'user_id': user.id,
-        'registration_id': registration_id,
-        'cardholder_name': data.get('holder'),
-        'expiry_month': data.get('expiryMonth'),
-        'expiry_year': data.get('expiryYear'),
-        'last_four_digits': data.get('last4Digits'),
-        'bin': data.get('bin'),
-    }
-    return CreditCard.objects.create(**card)
+
+    try:
+        card = CreditCard.objects.get(registration_id=registration_id)
+    except CreditCard.DoesNotExist:
+        card = {
+            'user_id': user.id,
+            'registration_id': registration_id,
+            'cardholder_name': data.get('holder'),
+            'expiry_month': data.get('expiryMonth'),
+            'expiry_year': data.get('expiryYear'),
+            'last_four_digits': data.get('last4Digits'),
+            'bin': data.get('bin'),
+        }
+        card = CreditCard.objects.create(**card)
+    return card
 
 def save_transaction(user, data):
 
