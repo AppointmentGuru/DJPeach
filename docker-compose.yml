@@ -16,7 +16,7 @@ services:
       - "8000:8000"
     env_file:
       - env.dev
-#      - env.prod
+      - env.prod
 
 volumes:
   subscriptionguru-postgres-db-volume:

@@ -25,6 +25,7 @@ def prepare_checkout_data(request, user=None, product=None):
         "authentication.userId": settings.PEACH_USER_ID,
         "authentication.password": settings.PEACH_PASSWORD,
         "authentication.entityId": settings.PEACH_ENTITY_RECURRING_ID,
+        # "authentication.entityId": settings.PEACH_ENTITY_ID,
         "createRegistration": True,
         "paymentType": "DB",
         "recurringType": "INITIAL",

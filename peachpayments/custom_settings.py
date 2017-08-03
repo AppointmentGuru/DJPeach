@@ -7,6 +7,7 @@ PEACH_PASSWORD = os.environ.get('PEACH_PASSWORD')
 PEACH_ENTITY_ID = os.environ.get('PEACH_ENTITY_ID')
 PEACH_RESULT_PAGE = os.environ.get('PEACH_RESULT_PAGE')
 PEACH_ENTITY_RECURRING_ID = os.environ.get('PEACH_ENTITY_RECURRING_ID')
+PEACH_BASE_URL = os.environ.get('PEACH_BASE_URL')
 
 ALLOWED_HOSTS = [host.strip() for host in os.environ.get("ALLOWED_HOSTS", '').split(',')]
 

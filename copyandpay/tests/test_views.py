@@ -48,12 +48,12 @@ error_response_result_data = {
 class PaymentPageTestCase(TestCase):
 
     def setUp(self):
-        self.url = reverse('payment_page')
+
         self.user = get_user_model().objects.create_user('joe', 'joe@soap.com', 'pass')
         client = Client()
         login_result = client.login(username='joe', password='pass')
         self.product = create_product()
-
+        self.url = reverse('payment_page', args=(self.product.id,))
         self.result = client.get(self.url)
 
     def test_is_ok(self):

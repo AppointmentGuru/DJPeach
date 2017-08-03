@@ -35,15 +35,20 @@ def payment_page(request, product_id):
     -d "paymentType=DB"
     '''
 
-    token = request.GET.get('t')
-    guru = AppointmentGuru(token)
-    me = guru.me()
-    user_data = me.json().get('results')[0]
+    token = request.GET.get('t', None)
+    user_data = None
+    if token is not None:
+        guru = AppointmentGuru(token)
+        me = guru.me()
+        user_data = me.json().get('results')[0]
 
     product = Product.objects.get(id=product_id)
     data = prepare_checkout_data(request, user_data, product)
 
     url = '{}/v1/checkouts'.format(settings.PEACH_BASE_URL)
+
+    print(url)
+    print(data)
     response = requests.post(url, data)
     checkout_id = response.json().get('id')
     context = {
