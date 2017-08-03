@@ -10,10 +10,8 @@ def post_to_slack(data):
         slack_client = SlackClient(token)
 
         channel = settings.SLACK_CHANNEL
-        print (data)
         message = "```{}```".format(json.dumps(data, indent=2))
         res = slack_client.api_call("chat.postMessage", channel=channel, text=message)
-        print(res)
         return res
 
 def prepare_checkout_data(request, user=None, product=None):
@@ -32,7 +30,7 @@ def prepare_checkout_data(request, user=None, product=None):
     }
 
     if product is not None:
-        transaction_id = '{}/{}'.format(request.user.id, transaction_id)
+        transaction_id = '{}/{}'.format(product.id, transaction_id)
         price = int(product.price)
         data['currency'] = product.currency
         data['amount'] = price

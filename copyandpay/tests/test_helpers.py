@@ -68,18 +68,25 @@ class PrepareCheckoutDataTestCase(TestCase):
     def test_registered_cards_are_added_to_data(self):
         cc1 = create_card(self.user)
         cc2 = create_card(self.user)
+        mock_user = {
+            "id": self.user.id
+        }
+        result = prepare_checkout_data(self.request, mock_user)
 
-        result = prepare_checkout_data(self.request)
+        ids=[id.get('registration_id') for id in CreditCard.objects.all().values('registration_id')]
+        assert result['registrations[0].id'] in ids
+        assert result['registrations[1].id'] in ids
 
-        assert result['registrations[0].id'] == cc1.registration_id,\
-            'Expected "registrations[0].id" to be: {}. Data: {}' .format(cc1.registration_id, result)
-        assert result['registrations[1].id'] == cc2.registration_id
 
     def test_product_data_added_if_product_is_supplied(self):
         product = create_product()
-        result = prepare_checkout_data(self.request, product)
+        mock_user = {
+            "id": self.user.id
+        }
+        result = prepare_checkout_data(self.request, mock_user, product)
 
         transaction_id_parts = result['merchantTransactionId'].split('/')
+
         assert int(transaction_id_parts[0]) == self.user.id,\
             'Expected {}. got: {}: {}'.format(transaction_id_parts[0], self.user.id, result['merchantTransactionId'])
         assert int(transaction_id_parts[1]) == product.id

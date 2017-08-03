@@ -47,7 +47,14 @@ error_response_result_data = {
 
 class PaymentPageTestCase(TestCase):
 
+    @responses.activate
     def setUp(self):
+
+        responses.add(
+            responses.POST,
+            'https://test.oppwa.com/v1/checkouts',
+            body=json.dumps({'id': '123'}),
+        )
 
         self.user = get_user_model().objects.create_user('joe', 'joe@soap.com', 'pass')
         client = Client()
@@ -68,8 +75,7 @@ class LoggedInUserPaymentTestCase(TestCase):
     def setUp(self):
         self.url = reverse('result_page')
         self.user = get_user_model().objects.create_user('joe', 'joe@soap.com', 'pass')
-        client = Client()
-        login_result = client.login(username='joe', password='pass')
+        login_result = self.client.login(username='joe', password='pass')
 
     def test_adds_any_registration_ids_that_exist(self):
         pass
@@ -91,6 +97,14 @@ class PaymentResultErrorTestCase(TestCase):
             content_type='application/json'
         )
 
+        responses.add(
+            responses.POST,
+            'https://slack.com/api/chat.postMessage',
+            body=json.dumps({}),
+            status=201,
+            content_type='application/json'
+        )
+
         data = {
             'resourcePath': '/v1/checkouts/123/payment'
         }
@@ -108,8 +122,7 @@ class PaymentResultReceivedTestCase(TestCase):
     def setUp(self):
         self.url = reverse('result_page')
         self.user = get_user_model().objects.create_user('joe', 'joe@soap.com', 'pass')
-        client = Client()
-        login_result = client.login(username='joe', password='pass')
+        login_result = self.client.login(username='joe', password='pass')
         data = {
             'resourcePath': '/v1/checkouts/123/payment'
         }
@@ -121,8 +134,15 @@ class PaymentResultReceivedTestCase(TestCase):
             status=200,
             content_type='application/json'
         )
+        responses.add(
+            responses.POST,
+            'https://slack.com/api/chat.postMessage',
+            body=json.dumps({}),
+            status=201,
+            content_type='application/json'
+        )
 
-        self.result = client.get(self.url, data)
+        self.result = self.client.get(self.url, data)
 
     def test_is_ok(self):
         assert self.result.status_code == 200
