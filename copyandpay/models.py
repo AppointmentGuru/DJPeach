@@ -122,7 +122,7 @@ result = t.make_recurring_payment()
             payload = {
                 'authentication.userId' : settings.PEACH_USER_ID,
                 'authentication.password' : settings.PEACH_PASSWORD,
-                'authentication.entityId' : settings.PEACH_ENTITY_ID,
+                'authentication.entityId' : settings.PEACH_ENTITY_RECURRING_ID,
                 "amount": amount,
                 "currency": currency,
                 "paymentType": "PA",
