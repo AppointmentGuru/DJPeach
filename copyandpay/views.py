@@ -5,10 +5,10 @@ from django.shortcuts import render
 from django.conf import settings
 
 from .models import Transaction, Product
-from .helpers import prepare_checkout_data, save_card, save_transaction, post_to_slack
+from .helpers import prepare_checkout_data, save_transaction, post_to_slack
 from .appointmentguru import AppointmentGuru
 
-import requests, uuid
+import requests, json
 
 def index(request):
     '''
@@ -80,8 +80,20 @@ def result_page(request):
 
 
     context = {
+        'company': 'AppointmentGuru',
         'result': payment_data
     }
     return render(request, 'copyandpay/result.html', context=context)
 
-
+def transaction_receipt(request, transaction_id):
+    transaction = Transaction.objects.get(pk=transaction_id)
+    data = json.loads(transaction.data)
+    total = sum([float(item.get('price')) for item in data.get('cart').get('items', [])])
+    context = {
+        'company': 'AppointmentGuru',
+        'support_url': 'http://appointmentguru/help/',
+        'transaction': transaction,
+        'data': data,
+        'total': total,
+    }
+    return render(request, 'copyandpay/receipt.html', context=context)
