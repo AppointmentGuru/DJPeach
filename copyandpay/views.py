@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.conf import settings
 
 from .models import Transaction, Product
@@ -85,8 +85,9 @@ def result_page(request):
     }
     return render(request, 'copyandpay/result.html', context=context)
 
-def transaction_receipt(request, transaction_id):
-    transaction = Transaction.objects.get(pk=transaction_id)
+def transaction_receipt(request, id):
+    transaction_id = request.GET.get('key', None)
+    transaction = get_object_or_404(Transaction, pk=id, transaction_id=transaction_id)
     data = json.loads(transaction.data)
     total = sum([float(item.get('price')) for item in data.get('cart').get('items', [])])
     context = {

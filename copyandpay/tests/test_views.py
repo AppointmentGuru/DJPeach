@@ -154,3 +154,4 @@ class PaymentResultReceivedTestCase(TestCase):
         assert CreditCard.objects.count() == 1
 
 
+
