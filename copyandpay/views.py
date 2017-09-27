@@ -88,7 +88,8 @@ def result_page(request):
 def transaction_receipt(request, id):
     transaction_id = request.GET.get('key', None)
     transaction = get_object_or_404(Transaction, pk=id, transaction_id=transaction_id)
-    data = json.loads(transaction.data)
+    data = transaction.merged_data
+    print (data)
     total = sum([float(item.get('price')) for item in data.get('cart').get('items', [])])
     context = {
         'company': 'AppointmentGuru',

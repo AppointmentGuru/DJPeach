@@ -5,8 +5,9 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 
 from ..models import CreditCard
-from ..helpers import prepare_checkout_data, save_card
+from ..helpers import prepare_checkout_data, save_card, recurring_transaction_data_from_transaction
 from .utils import create_user, create_product, create_card
+from .datas import SUCCESS_PAYMENT
 
 def assert_fields(expected_fields, data):
     for field in expected_fields:
@@ -91,6 +92,8 @@ class PrepareCheckoutDataTestCase(TestCase):
             'Expected {}. got: {}: {}'.format(transaction_id_parts[0], self.user.id, result['merchantTransactionId'])
         assert int(transaction_id_parts[1]) == product.id
 
+class RecurringTransactionPayloadTestCase(TestCase):
 
-
-
+    def test_prepare_payload(self):
+        data = recurring_transaction_data_from_transaction(SUCCESS_PAYMENT)
+        import ipdb;ipdb.set_trace()

@@ -14,6 +14,39 @@ def post_to_slack(data):
         res = slack_client.api_call("chat.postMessage", channel=channel, text=message)
         return res
 
+def recurring_transaction_data_from_transaction(data):
+
+    amount = data.get('amount')
+    currency = data.get('currency')
+
+    payload = {
+        'authentication.userId' : settings.PEACH_USER_ID,
+        'authentication.password' : settings.PEACH_PASSWORD,
+        'authentication.entityId' : settings.PEACH_ENTITY_RECURRING_ID,
+        "amount": amount,
+        "currency": currency,
+        "paymentType": "PA",
+        "recurringType": "REPEATED"
+    }
+    user = data.get('customer', None)
+    if user is not None:
+        payload['customer.givenName'] = user.get('givenName')
+        payload['customer.surname'] = user.get('companyName')
+        payload['customer.mobile'] = user.get('mobile')
+        payload['customer.email'] = user.get('email')
+
+    cart = data.get('card', {}).get('items', [])
+    for (index, item) in enumerate(cart):
+        payload['cart.items[{}].name'.format(index)] = item.get("name")
+        payload['cart.items[{}].merchantItemId'\
+            .format(index)] = item.get("merchantItemId")
+        payload['cart.items[{}].quantity'.format(index)] = item.get("quantity")
+        payload['cart.items[{}].price'.format(index)] = item.get("price")
+        payload['cart.items[{}].originalPrice'\
+            .format(index)] = item.get("originalPrice")
+
+    return payload
+
 def prepare_checkout_data(request, user=None, product=None):
     cards = []
     # :user/:product/:transaction

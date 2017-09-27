@@ -84,6 +84,8 @@ class Transaction(models.Model):
     card = models.ForeignKey(CreditCard, on_delete=models.SET_NULL, related_name='card_transaction', null=True, blank=True)
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, related_name='product_transaction', null=True, blank=True)
 
+    initial_transaction = models.ForeignKey('Transaction', null=True, blank=True, on_delete=models.SET_NULL, default=None)
+
     currency = models.CharField(max_length=6)
     price = models.DecimalField(decimal_places=2, max_digits=10, default=0)
 
@@ -101,37 +103,42 @@ class Transaction(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
 
+    @property
+    def merged_data(self):
+        data = {}
+        if self.initial_transaction is not None:
+            data = json.loads(self.initial_transaction.data)
+
+        data.update(json.loads(self.data))
+        return data
+
     def make_recurring_payment(self):
         '''
 from copyandpay.models import Transaction
 t = Transaction.objects.first()
 result = t.make_recurring_payment()
         '''
+        from .helpers import recurring_transaction_data_from_transaction
+
         recurring_types = ['INITIAL', 'REPEATED']
         data = json.loads(self.data)
 
         base_url = settings.PEACH_BASE_URL
         payment_type = data.get('recurringType')
         registration_id = data.get('registrationId')
-        amount = data.get('amount')
-        currency = data.get('currency')
 
         if payment_type in recurring_types:
             url = '{}/v1/registrations/{}/payments'\
                 .format(base_url, registration_id)
-            payload = {
-                'authentication.userId' : settings.PEACH_USER_ID,
-                'authentication.password' : settings.PEACH_PASSWORD,
-                'authentication.entityId' : settings.PEACH_ENTITY_RECURRING_ID,
-                "amount": amount,
-                "currency": currency,
-                "paymentType": "PA",
-                "recurringType": "REPEATED"
-            }
+
+            payload = recurring_transaction_data_from_transaction(data)
+            print(payload)
             result = requests.post(url, payload)
             if result.json().get('id', None) is not None:
                 from .helpers import save_transaction
                 transaction = save_transaction(None, result.json())
+                transaction.initial_transaction_id = self.id
+                transaction.save()
                 return transaction
             else:
                 return result
