@@ -97,7 +97,7 @@ def save_transaction(user, data):
     }
 
     transaction = Transaction.objects.create(**transaction)
-    if data.get('card', None) is not None:
+    if data.get('card', None) is not None and user is not None:
         card = save_card(user, data.get('registrationId'), data.get('card'))
         transaction.card = card
         transaction.save()

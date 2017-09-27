@@ -4,6 +4,8 @@ from django.conf import settings
 
 from django.db import models
 
+import requests, json
+
 '''
     {u'amount': u'92.00',
      u'buildNumber': u'5afc05a9586b4307d3e0e7b9f8d131712d088597@2017-06-27 06:21:44 +0000',
@@ -86,16 +88,67 @@ class Transaction(models.Model):
     price = models.DecimalField(decimal_places=2, max_digits=10, default=0)
 
     transaction_id = models.CharField(max_length=255)
-    ndc = models.CharField(max_length=255)
-    payment_brand = models.CharField(max_length=255)
+    ndc = models.CharField(max_length=255, null=True, blank=True)
+    payment_brand = models.CharField(max_length=255, null=True, blank=True)
     payment_type = models.CharField(max_length=6)
-    registration_id = models.CharField(max_length=42)
+    registration_id = models.CharField(max_length=42, null=True, blank=True)
 
     result_code = models.CharField(max_length=22)
-    result_description = models.TextField()
+    result_description = models.TextField(null=True, blank=True)
 
     data = models.TextField(null=True, blank=True)
 
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
+
+    def make_recurring_payment(self):
+        '''
+from copyandpay.models import Transaction
+t = Transaction.objects.first()
+result = t.make_recurring_payment()
+        '''
+        recurring_types = ['INITIAL', 'REPEATED']
+        data = json.loads(self.data)
+
+        base_url = settings.PEACH_BASE_URL
+        payment_type = data.get('recurringType')
+        registration_id = data.get('registrationId')
+        amount = data.get('amount')
+        currency = data.get('currency')
+
+        if payment_type in recurring_types:
+            url = '{}/v1/registrations/{}/payments'\
+                .format(base_url, registration_id)
+            payload = {
+                'authentication.userId' : settings.PEACH_USER_ID,
+                'authentication.password' : settings.PEACH_PASSWORD,
+                'authentication.entityId' : settings.PEACH_ENTITY_ID,
+                "amount": amount,
+                "currency": currency,
+                "paymentType": "PA",
+                "recurringType": "REPEATED"
+            }
+            result = requests.post(url, payload)
+            if result.json().get('id', None) is not None:
+                from .helpers import save_transaction
+                transaction = save_transaction(None, result.json())
+                return transaction
+            else:
+                return result
+        else:
+            print('Transaction is not a recurring type')
+
+
+'''
+curl https://test.oppwa.com/v1/registrations/{id}/payments \
+	-d "authentication.userId=8a8294174e735d0c014e78cf266b1794" \
+	-d "authentication.password=qyyfHCN83e" \
+	-d "authentication.entityId=8a8294174e735d0c014e78cf26461790" \
+	-d "amount=92.00" \
+	-d "currency=ZAR" \
+	-d "paymentType=PA" \
+	-d "recurringType=REPEATED"
+'''
+
+
 
