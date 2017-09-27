@@ -105,6 +105,9 @@ class Transaction(models.Model):
 
     @property
     def merged_data(self):
+        '''
+        format and merge data from this template and it's parent if necessary
+        '''
         data = {}
         if self.initial_transaction is not None:
             data = json.loads(self.initial_transaction.data)

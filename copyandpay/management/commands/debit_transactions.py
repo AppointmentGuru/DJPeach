@@ -4,7 +4,5 @@ class Command(BaseCommand):
     help = 'Make recurring payments'
 
     def handle(self, *args, **options):
-        transactions = Transaction.objects.filter()
-
-        for t in transactions:
-            print (t)
+        transaction = Transaction.objects.get(id=args[0])
+        transaction.make_recurring_payment()
