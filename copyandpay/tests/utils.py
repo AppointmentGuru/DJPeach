@@ -1,7 +1,11 @@
+'''Various utils to make testing easier'''
+
 from ..models import CreditCard, Transaction, Product
 from django.contrib.auth import get_user_model
-import random, uuid
 from faker import Factory
+from .datas import SUCCESS_PAYMENT
+import random, uuid, json
+
 FAKE = Factory.create()
 
 def get_uuid():
@@ -38,3 +42,20 @@ def create_card(user, **kwargs):
     }
     data.update(kwargs)
     return CreditCard.objects.create(**data)
+
+def create_transaction():
+    data = SUCCESS_PAYMENT
+    transaction = {
+        # "user_id": user.id,
+        "currency": data.get('currency'),
+        "price": data.get('amount'),
+        "transaction_id": data.get('id'),
+        "ndc": data.get('ndc'),
+        "payment_brand": data.get('paymentBrand'),
+        "payment_type": data.get('paymentType'),
+        "registration_id": data.get('registrationId'),
+        "result_code": data.get('result', {}).get('code'),
+        "result_description": data.get('result', {}).get('description'),
+        "data": json.dumps(data)
+    }
+    return Transaction.objects.create(**transaction)

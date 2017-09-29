@@ -1,13 +1,17 @@
 from __future__ import unicode_literals
 
 from django.test import TestCase, RequestFactory
-from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 
 from ..models import CreditCard
-from ..helpers import prepare_checkout_data, save_card, recurring_transaction_data_from_transaction
-from .utils import create_user, create_product, create_card
+from ..helpers import prepare_checkout_data, \
+    save_card,\
+    recurring_transaction_data_from_transaction,\
+    send_receipt
+
+from .utils import create_user, create_product, create_card, create_transaction
 from .datas import SUCCESS_PAYMENT
+import responses
 
 def assert_fields(expected_fields, data):
     for field in expected_fields:
@@ -94,6 +98,16 @@ class PrepareCheckoutDataTestCase(TestCase):
 
 class RecurringTransactionPayloadTestCase(TestCase):
 
+    def setUp(self):
+        self.transaction = create_transaction()
+
     def test_prepare_payload(self):
         data = recurring_transaction_data_from_transaction(SUCCESS_PAYMENT)
-        import ipdb;ipdb.set_trace()
+
+    @responses.activate
+    def test_send_receipt(self):
+        responses.add(
+            responses.POST,
+            'https://communicationguru.appointmentguru.co/communications/')
+        send_receipt(self.transaction)
+

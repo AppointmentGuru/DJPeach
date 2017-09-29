@@ -148,6 +148,35 @@ result = t.make_recurring_payment()
         else:
             print('Transaction is not a recurring type')
 
+TRANSACTION_STATUSES = [
+    ('new', 'new'),
+    ('success', 'success'),
+    ('failed', 'failed'),
+]
+
+class ScheduledPayment(models.Model):
+    '''A means to schedule payments'''
+
+    transaction = models.ForeignKey('Transaction', null=True, blank=True, on_delete=models.SET_NULL, default=None)
+    scheduled_date = models.DateField()
+    status = models.CharField(max_length=10, default='new', choices=TRANSACTION_STATUSES)
+
+    def create_payment(self):
+        '''Will attempt to make a payment hit based on the related transaction'''
+
+        transaction = self.transaction.make_recurring_payment()
+
+        # if transaction.is_successful:
+        #     send_receipt
+        # else:
+        #     send_failure_message
+        #     schedule_for_tomorrow
+
+        # if transaction.card_expires_soon:
+        #     send_card_expires_message
+
+        return transaction
+
 
 '''
 curl https://test.oppwa.com/v1/registrations/{id}/payments \

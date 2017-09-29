@@ -34,3 +34,5 @@ DATABASES = {
 db_password = os.environ.get('DATABASE_PASSWORD', False)
 if db_password:
     DATABASES.get('default').update({'PASSWORD': db_password})
+
+COMMUNICATIONGURU_URL = 'https://communicationguru.appointmentguru.co'

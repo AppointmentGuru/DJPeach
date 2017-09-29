@@ -5,7 +5,7 @@ from django.shortcuts import render, get_object_or_404
 from django.conf import settings
 
 from .models import Transaction, Product
-from .helpers import prepare_checkout_data, save_transaction, post_to_slack
+from .helpers import prepare_checkout_data, save_transaction, post_to_slack, get_receipt_context
 from .appointmentguru import AppointmentGuru
 
 import requests, json
@@ -87,15 +87,9 @@ def result_page(request):
 
 def transaction_receipt(request, id):
     transaction_id = request.GET.get('key', None)
-    transaction = get_object_or_404(Transaction, pk=id, transaction_id=transaction_id)
-    data = transaction.merged_data
-    print (data)
-    total = sum([float(item.get('price')) for item in data.get('cart').get('items', [])])
-    context = {
-        'company': 'AppointmentGuru',
-        'support_url': 'http://appointmentguru/help/',
-        'transaction': transaction,
-        'data': data,
-        'total': total,
-    }
+    transaction = get_object_or_404(
+        Transaction,
+        pk=id,
+        transaction_id=transaction_id)
+    context = get_receipt_context(transaction)
     return render(request, 'copyandpay/receipt.html', context=context)

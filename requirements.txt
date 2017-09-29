@@ -5,6 +5,8 @@ django-storages==1.6.3
 boto==2.48.0
 slackclient==1.0.6
 
+appointmentguru_helpers
+
 requests
 responses
 

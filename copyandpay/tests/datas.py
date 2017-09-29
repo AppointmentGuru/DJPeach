@@ -23,7 +23,7 @@ SUCCESS_PAYMENT = {
     "companyName": "AppointmentGuru",
     "mobile": "+27832566533",
     "email": "christo@appointmentguru.co",
-    "ip": "196.212.60.84",
+    "ip": "1.2.3.4",
     "ipCountry": "ZA"
   },
   "customParameters": {

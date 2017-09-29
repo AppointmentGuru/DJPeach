@@ -1,8 +1,9 @@
 from django.conf import settings
+from django.template.loader import render_to_string
 from .models import CreditCard, Transaction
-
+from appointmentguru.communicationguru import CommunicationGuru
 from slackclient import SlackClient
-import requests, json, uuid, os
+import requests, json, uuid, os, datetime
 
 def post_to_slack(data):
     token = os.environ.get('SLACK_TOKEN', None)
@@ -60,6 +61,7 @@ def prepare_checkout_data(request, user=None, product=None):
         cards = CreditCard.objects.filter(user_id=user.get('id'))
         transaction_id = '{}/{}'.format(request.user.id, transaction_id)
 
+        data['customer.merchantCustomerId'] = user.get('id')
         data['customer.givenName'] = user.get('first_name')
         data['customer.surname'] = user.get('surname_name')
         data['customer.mobile'] = user.get('phone_number')
@@ -118,6 +120,34 @@ def save_transaction(user, data):
         transaction.save()
 
     return transaction
+
+def get_receipt_context(transaction):
+    data = transaction.merged_data
+    total = sum([float(item.get('price')) for item in data.get('cart').get('items', [])])
+    context = {
+        'company': 'AppointmentGuru',
+        'support_url': 'http://appointmentguru/help/',
+        'transaction': transaction,
+        'data': data,
+        'total': total,
+    }
+    return context
+
+def send_receipt(transaction, subject=None):
+    '''Send a receipt by email for the given transaction'''
+
+    if subject is None:
+        now = datetime.datetime.now()
+        subject = 'Your receipt for {}'.format(now.strftime('%b %Y'))
+
+    context = get_receipt_context(transaction)
+    html = render_to_string('copyandpay/receipt.html', context)
+    to_email = transaction.merged_data.get('customer', {}).get('email')
+
+    return CommunicationGuru(settings.COMMUNICATIONGURU_URL)\
+        .send_email([to_email], subject, html)
+
+
 
 def repeat_payment():
     '''
