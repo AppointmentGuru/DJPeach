@@ -131,7 +131,7 @@ def save_transaction(data):
 
 def get_receipt_context(transaction):
     data = transaction.merged_data
-    total = sum([float(item.get('price')) for item in data.get('cart').get('items', [])])
+    total = sum([float(item.get('price')) for item in data.get('cart',{}).get('items', [])])
     context = {
         'company': 'AppointmentGuru',
         'support_url': 'http://appointmentguru/help/',

@@ -189,7 +189,7 @@ result = t.make_recurring_payment()
             result = requests.post(url, payload)
             if result.json().get('id', None) is not None:
                 from .helpers import save_transaction
-                transaction = save_transaction(None, result.json())
+                transaction = save_transaction(result.json())
                 transaction.initial_transaction_id = self.id
                 transaction.save()
                 return transaction

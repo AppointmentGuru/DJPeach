@@ -33,10 +33,10 @@ def create_product(**kwargs):
     data.update(kwargs)
     return Product.objects.create(**data)
 
-def create_card(user, **kwargs):
+def create_card(owner_id=1, **kwargs):
 
     data = {
-        "user": user,
+        "owner_id": owner_id,
         "cardholder_name": FAKE.name(),
         "registration_id": get_uuid(),
         "bin": get_uuid(),
