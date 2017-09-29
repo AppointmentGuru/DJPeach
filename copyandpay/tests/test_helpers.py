@@ -102,12 +102,14 @@ class RecurringTransactionPayloadTestCase(TestCase):
         self.transaction = create_transaction()
 
     def test_prepare_payload(self):
-        data = recurring_transaction_data_from_transaction(SUCCESS_PAYMENT)
+        recurring_transaction_data_from_transaction(SUCCESS_PAYMENT)
 
-    @responses.activate
+    # @responses.activate
     def test_send_receipt(self):
+        '''
         responses.add(
             responses.POST,
             'https://communicationguru.appointmentguru.co/communications/')
+        '''
         send_receipt(self.transaction)
 

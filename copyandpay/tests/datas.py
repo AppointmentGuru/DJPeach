@@ -19,7 +19,8 @@ SUCCESS_PAYMENT = {
     "expiryYear": "2018"
   },
   "customer": {
-    "givenName": "Christo",
+    "merchantCustomerId": '1',
+    "givenName": "Joe",
     "companyName": "AppointmentGuru",
     "mobile": "+27832566533",
     "email": "christo@appointmentguru.co",

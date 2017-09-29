@@ -8,6 +8,10 @@ import random, uuid, json
 
 FAKE = Factory.create()
 
+def add_communication_response():
+    '''Adds an expected request to communicationguru'''
+    pass
+
 def get_uuid():
     return str(uuid.uuid4())
 

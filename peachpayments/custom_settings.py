@@ -36,3 +36,4 @@ if db_password:
     DATABASES.get('default').update({'PASSWORD': db_password})
 
 COMMUNICATIONGURU_URL = 'https://communicationguru.appointmentguru.co'
+DEFAULT_FROM_EMAIL = 'support@appointmentguru.co'

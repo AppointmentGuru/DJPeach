@@ -5,7 +5,7 @@ from django.shortcuts import render, get_object_or_404
 from django.conf import settings
 
 from .models import Transaction, Product
-from .helpers import prepare_checkout_data, save_transaction, post_to_slack, get_receipt_context
+from .helpers import prepare_checkout_data, save_transaction, handle_transaction_result, post_to_slack, get_receipt_context
 from .appointmentguru import AppointmentGuru
 
 import requests, json
@@ -73,11 +73,11 @@ def result_page(request):
     #     pass
 
     if payment_data.get('id', None) is not None:
-        save_transaction(request.user, payment_result.json())
+        transaction = save_transaction(payment_result.json())
+        handle_transaction_result(transaction, send_to_slack=False)
     else:
         # error
         pass
-
 
     context = {
         'company': 'AppointmentGuru',

@@ -4,7 +4,7 @@ from django.conf import settings
 
 from django.db import models
 
-import requests, json
+import requests, json, datetime, re
 
 '''
     {u'amount': u'92.00',
@@ -33,7 +33,7 @@ class CreditCard(models.Model):
     def __str__(self):
         return '{} ****{}'.format(self.cardholder_name, self.last_four_digits)
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='credit_cards')
+    owner_id = models.CharField(max_length=36)
     cardholder_name = models.CharField(max_length=255)
     registration_id = models.CharField(max_length=46)
     bin = models.CharField(max_length=255)
@@ -80,6 +80,9 @@ class UserProduct(models.Model):
 
 class Transaction(models.Model):
 
+    def __str__(self):
+        return '#{} - '.format(self.transaction_id, self.customer_name)
+
     user_product = models.ForeignKey(UserProduct, on_delete=models.SET_NULL, related_name='user_transaction', null=True, blank=True)
     card = models.ForeignKey(CreditCard, on_delete=models.SET_NULL, related_name='card_transaction', null=True, blank=True)
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, related_name='product_transaction', null=True, blank=True)
@@ -102,6 +105,53 @@ class Transaction(models.Model):
 
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
+
+    @property
+    def customer_name(self):
+        return self.merged_data.get('customer',{}).get('givenName')
+
+    @property
+    def is_initial(self):
+        '''Is this an original (e.g.: manual) payment?'''
+        return self.initial_transaction is None
+
+    @property
+    def status(self):
+        '''Based on peach payment result regexes, returns the status of this transaction'''
+
+        regex_statuses = [
+            # success \o/
+            ('^(000\.000\.|000\.100\.1|000\.[36])', 'success'),
+            ('^(000\.400\.0|000\.400\.100)', 'success_review_required'),
+            # pending:
+            ('^(000\.200)', 'pending'),
+            ('^(800\.400\.5|100\.400\.500)', 'pending_long_term'),
+            # rejections
+            ('^(000\.400\.[1][0-9][1-9]|000\.400\.2)', 'rejected_3d_secure'),
+            ('^(800\.[17]00|800\.800\.[123])', 'rejected_by_payment_system_or_bank'),
+            ('^(900\.[1234]00)', 'rejected_communication_error'),
+            ('^(800\.5|999\.|600\.1|800\.800\.8)', 'rejected_system_error'),
+            ('^(100\.39[765])', 'rejected_async_workflow_error'),
+            ('^(100\.400|100\.38|100\.370\.100|100\.370\.11)', 'rejected_risk'),
+            ('^(800\.400\.1)', 'rejected_address_validation'),
+            ('^(800\.400\.2|100\.380\.4|100\.390)', 'rejected_3d_secure'),
+            ('^(100\.100\.701|800\.[32])', 'rejected_blacklist'),
+            ('^(800\.1[123456]0)', 'rejected_risk_validation'),
+            ('^(600\.[23]|500\.[12]|800\.121)', 'rejected_config_validation'),
+            ('^(100\.[13]50)', 'rejected_registration_validation'),
+            ('^(100\.250|100\.360)', 'rejected_job_validation'),
+            ('^(700\.[1345][05]0)', 'rejected_reference_validation'),
+            ('^(200\.[123]|100\.[53][07]|800\.900|100\.[69]00\.500)', 'rejected_format_validation'),
+            ('^(100\.800)', 'rejected_address_validation'),
+            ('^(100\.[97]00)', 'rejected_contact_validation'),
+            ('^(100\.100|100.2[01])', 'rejected_account_validation'),
+            ('^(100\.55)', 'rejected_amount_validation'),
+            ('^(100\.380\.[23]|100\.380\.101)', 'rejected_risk_management'),
+            ('^(000\.100\.2)', 'chargeback'),
+        ]
+        for regex, result in regex_statuses:
+            if re.match(regex,self.result_code) is not None:
+                return result
 
     @property
     def merged_data(self):
@@ -152,6 +202,7 @@ TRANSACTION_STATUSES = [
     ('new', 'new'),
     ('success', 'success'),
     ('failed', 'failed'),
+    ('pending', 'pending'),
 ]
 
 class ScheduledPayment(models.Model):
@@ -163,7 +214,6 @@ class ScheduledPayment(models.Model):
 
     def create_payment(self):
         '''Will attempt to make a payment hit based on the related transaction'''
-
         transaction = self.transaction.make_recurring_payment()
 
         # if transaction.is_successful:
