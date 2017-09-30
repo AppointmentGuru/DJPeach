@@ -1,0 +1,57 @@
+---
+version: '3'
+
+services:
+  {{docker_service}}:
+    image: {{docker_org}}/{{docker_image}}:{{docker_version}}
+    command: {{docker_command}}
+    networks:
+      - kong
+    deploy:
+        replicas: {{docker_replicas}}
+        update_config:
+          parallelism: {{docker_parallelism}}
+          delay: {{docker_delay}}
+{% if docker_environment|length > 0 %}
+    environment:
+{% for var in docker_environment %}
+      - {{var.key}}={{var.value}}
+{% endfor %}
+  {{docker_service}}_debit_transactions:
+    image: {{docker_org}}/{{docker_image}}:{{docker_version}}
+    command: python manage.py debit_transactions
+    networks:
+      - kong
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 24h
+{% if docker_environment|length > 0 %}
+    environment:
+{% for var in docker_environment %}
+      - {{var.key}}={{var.value}}
+{% endfor %}
+  {{docker_service}}_backup:
+    image: appointmentguru/pgbackups
+    command: sh /backup.sh
+    networks:
+      - kong
+    deploy:
+      restart_policy:
+        condition: any
+        delay: 12h
+    environment:
+      - BUCKET_NAME={{aws_backups_bucket}}
+      - AWS_DEFAULT_REGION={{aws_region}}
+      - AWS_ACCESS_KEY_ID={{aws_access_key}}
+      - AWS_SECRET_ACCESS_KEY={{aws_secret_key}}
+      - PGDATABASE={{organization}}_{{service}}
+      - PGUSER={{organization}}_{{service}}
+      - PGHOST={{postgres_db_host}}
+      - PGPASSWORD={{postgres_passwords[service]}}
+{% endif %}
+networks:
+  kong:
+    external:
+      name: infrastructure_internal
