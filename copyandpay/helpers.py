@@ -141,21 +141,19 @@ def get_receipt_context(transaction):
     }
     return context
 
-def send_receipt(transaction, subject=None):
+def send_receipt(transaction, customer, subject=None):
     '''Send a receipt by email for the given transaction'''
 
     if subject is None:
         now = datetime.datetime.now()
         subject = 'Your receipt for {}'.format(now.strftime('%b %Y'))
 
-    customer = transaction.merged_data.get('customer', {})
-
     context = get_receipt_context(transaction)
     html = render_to_string('copyandpay/receipt.html', context)
-    to_email = customer.get('email')
+    to_email = customer.email
 
     extra_data = {
-        "owner": customer.get('merchantCustomerId'),
+        "owner": customer.owner_id,
         "object_ids": ["transaction:{}".format(transaction.id)]
     }
 
@@ -167,10 +165,8 @@ def send_receipt(transaction, subject=None):
             from_email=settings.DEFAULT_FROM_EMAIL,
             **extra_data)
 
-def handle_transaction_result(transaction, initial_transaction=None, scheduled_instance=None, reschedule=True, send_to_slack=True):
+def handle_transaction_result(transaction, scheduled_instance=None, reschedule=True, send_to_slack=True):
     '''Perform business logic based on the result of a transaction'''
-    if initial_transaction is None:
-        initial_transaction = transaction
 
     if transaction.status.startswith('success'):
 
@@ -183,7 +179,7 @@ def handle_transaction_result(transaction, initial_transaction=None, scheduled_i
         next_month = today+relativedelta(months=+1)
         if reschedule:
             ScheduledPayment.objects.create(
-                transaction=initial_transaction,
+                card=transaction.card,
                 scheduled_date=next_month
             )
         if scheduled_instance is not None:
@@ -196,12 +192,6 @@ def handle_transaction_result(transaction, initial_transaction=None, scheduled_i
             scheduled_instance.save()
 
     if transaction.status.startswith('rejected'):
-        # todo: send rejection email
-        # try again tomorrow
-        ScheduledPayment.objects.create(
-            transaction=initial_transaction,
-            scheduled_date=next_month
-        )
 
         if scheduled_instance is not None:
             scheduled_instance.status = 'failed'

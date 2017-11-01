@@ -162,7 +162,6 @@ class PaymentResultReceivedTestCase(TestCase):
     def test_creates_transaction(self):
         assert Transaction.objects.count() == 1
 
-    @unittest.skip("Needs an update")
     def test_creates_credit_card(self):
         assert CreditCard.objects.count() == 1
 

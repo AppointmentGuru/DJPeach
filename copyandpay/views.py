@@ -73,8 +73,10 @@ def result_page(request):
     #     pass
 
     if payment_data.get('id', None) is not None:
-        transaction = save_transaction(payment_result.json())
-        handle_transaction_result(transaction, send_to_slack=False)
+        result_data = payment_result.json()
+        transaction = save_transaction(result_data)
+        customer = Customer.from_transaction_customer(result_data.get('customer', {}))
+        handle_transaction_result(transaction, customer, send_to_slack=False)
     else:
         # error
         pass

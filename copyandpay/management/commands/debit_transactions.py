@@ -18,7 +18,7 @@ class Command(BaseCommand):
         post_to_slack('Automated payments for: {}'.format(today_formatted))
         scheduled_transactions = ScheduledPayment.objects.filter(status='new', scheduled_date=today)
         for schedule in scheduled_transactions:
-            transaction = schedule.create_payment()
+            result, transaction = schedule.run_recurring()
             handle_transaction_result(transaction, scheduled_instance=schedule)
             total_billed = total_billed + float(transaction.price)
 

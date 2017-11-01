@@ -17,12 +17,3 @@ class TransactionTestCase(TestCase):
         transaction.data = DATA
 
         self.transaction = transaction
-
-    @responses.activate
-    def test_hit_card(self):
-
-        responses.add(responses.POST,
-            'https://test.oppwa.com/v1/registrations/8acda4a25dc5f763015e0b0d34f4142a/payments',
-            json=json.loads(DATA))
-
-        self.transaction.make_recurring_payment()

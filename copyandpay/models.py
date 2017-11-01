@@ -28,6 +28,34 @@ import requests, json, datetime, re
      u'timestamp': u'2017-06-27 16:33:48+0000'}
 '''
 
+class Customer(models.Model):
+    '''Cached data on the customer'''
+
+    owner_id = models.CharField(max_length=36, blank=True, null=True)
+    name = models.CharField(max_length=36, blank=True, null=True)
+    company = models.CharField(max_length=36, blank=True, null=True)
+    mobile = models.CharField(max_length=36, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+
+    # given_name"givenName": "Christo",
+	# 	"companyName": "AppointmentGuru",
+	# 	"mobile": "+27832566533",
+	# 	"email": "christo@appointmentguru.co",
+	# 	"ip": "155.93.141.181"
+
+    @classmethod
+    def from_transaction_customer(cls, data, save=True):
+
+        cls.user_id = data.get('merchantCustomerId')
+        cls.name = data.get('givenName')
+        cls.mobile = data.get('mobile')
+        cls.email = data.get('email')
+        cls.company = data.get('companyName')
+        if save:
+            cls.save()
+        return cls
+
+
 class CreditCard(models.Model):
 
     def __str__(self):
@@ -62,32 +90,15 @@ class Product(models.Model):
     is_recurring = models.BooleanField(default=False)
     recurrance_rate = models.CharField(max_length=22, default='M', choices=RECURRANCE_RATES)
 
-class UserProduct(models.Model):
-    user = models.CharField(max_length=128)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-
-    card = models.ForeignKey(CreditCard, on_delete=models.SET_NULL, null=True, blank=True)
-
-    created_date = models.DateTimeField(auto_now_add=True)
-    modified_date = models.DateTimeField(auto_now=True)
-
-    def charge(self):
-        '''
-        Create a charge on a recurring product
-        '''
-        pass
 
 class Transaction(models.Model):
 
     def __str__(self):
         return '#{} - '.format(self.transaction_id, self.customer_name)
 
-    user_product = models.ForeignKey(UserProduct, on_delete=models.SET_NULL, related_name='user_transaction', null=True, blank=True)
+    owner_id = models.CharField(max_length=128, null=True, blank=True)
     card = models.ForeignKey(CreditCard, on_delete=models.SET_NULL, related_name='card_transaction', null=True, blank=True)
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, related_name='product_transaction', null=True, blank=True)
-
-    initial_transaction = models.ForeignKey('Transaction', null=True, blank=True, on_delete=models.SET_NULL, default=None)
 
     currency = models.CharField(max_length=6)
     price = models.DecimalField(decimal_places=2, max_digits=10, default=0)
@@ -105,15 +116,6 @@ class Transaction(models.Model):
 
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
-
-    @property
-    def customer_name(self):
-        return self.merged_data.get('customer',{}).get('givenName')
-
-    @property
-    def is_initial(self):
-        '''Is this an original (e.g.: manual) payment?'''
-        return self.initial_transaction is None
 
     @property
     def status(self):
@@ -153,51 +155,6 @@ class Transaction(models.Model):
             if re.match(regex,self.result_code) is not None:
                 return result
 
-    @property
-    def merged_data(self):
-        '''
-        format and merge data from this template and it's parent if necessary
-        '''
-        data = {}
-        if self.initial_transaction is not None:
-            data = json.loads(self.initial_transaction.data)
-
-        data.update(json.loads(self.data))
-        return data
-
-    def make_recurring_payment(self):
-        '''
-from copyandpay.models import Transaction
-t = Transaction.objects.first()
-result = t.make_recurring_payment()
-        '''
-        from .helpers import recurring_transaction_data_from_transaction
-
-        recurring_types = ['INITIAL', 'REPEATED']
-        data = json.loads(self.data)
-
-        base_url = settings.PEACH_BASE_URL
-        payment_type = data.get('recurringType')
-        registration_id = data.get('registrationId')
-
-        if payment_type in recurring_types:
-            url = '{}/v1/registrations/{}/payments'\
-                .format(base_url, registration_id)
-
-            payload = recurring_transaction_data_from_transaction(data)
-            print(payload)
-            result = requests.post(url, payload)
-            if result.json().get('id', None) is not None:
-                from .helpers import save_transaction
-                transaction = save_transaction(result.json())
-                transaction.initial_transaction_id = self.id
-                transaction.save()
-                return transaction
-            else:
-                return result
-        else:
-            print('Transaction is not a recurring type')
-
 TRANSACTION_STATUSES = [
     ('new', 'new'),
     ('success', 'success'),
@@ -208,25 +165,44 @@ TRANSACTION_STATUSES = [
 class ScheduledPayment(models.Model):
     '''A means to schedule payments'''
 
-    transaction = models.ForeignKey('Transaction', null=True, blank=True, on_delete=models.SET_NULL, default=None)
+    card = models.ForeignKey('CreditCard', null=True, blank=True, on_delete=models.SET_NULL, default=None)
+
     scheduled_date = models.DateField()
     status = models.CharField(max_length=10, default='new', choices=TRANSACTION_STATUSES)
 
-    def create_payment(self):
-        '''Will attempt to make a payment hit based on the related transaction'''
-        transaction = self.transaction.make_recurring_payment()
+    currency = models.CharField(max_length=6, default='ZAR')
+    amount = models.DecimalField(decimal_places=2, max_digits=10, default=0)
 
-        # if transaction.is_successful:
-        #     send_receipt
-        # else:
-        #     send_failure_message
-        #     schedule_for_tomorrow
+    run_on_creation = models.BooleanField(default=False, help_text='If this is selected, we\'ll try run this payment immediately' )
+    created_date = models.DateTimeField(auto_now_add=True)
+    modified_date = models.DateTimeField(auto_now=True)
 
-        # if transaction.card_expires_soon:
-        #     send_card_expires_message
+    def run_recurring(self):
+        data = {
+            'authentication.userId' : settings.PEACH_USER_ID,
+            'authentication.password' : settings.PEACH_PASSWORD,
+            'authentication.entityId' : settings.PEACH_ENTITY_RECURRING_ID,
+            "amount": self.amount,
+            "currency": self.currency,
+            "paymentType": "PA",
+            "recurringType": "REPEATED"
+        }
+        base_url = settings.PEACH_BASE_URL
+        registration_id = self.card.registration_id
+        url = '{}/v1/registrations/{}/payments'\
+                .format(base_url, registration_id)
 
-        return transaction
+        print(data)
+        result = requests.post(url, data)
+        if result.json().get('id', None) is not None:
+            from .helpers import save_transaction
+            transaction = save_transaction(result.json())
+            transaction.save()
+            return (result, transaction)
+        else:
+            return (result, None)
 
+from .signals import *
 
 '''
 curl https://test.oppwa.com/v1/registrations/{id}/payments \
