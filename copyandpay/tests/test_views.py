@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from ..models import CreditCard, Transaction
+from ..models import CreditCard, Transaction, Customer
 from .utils import create_product
 
 import responses, json, unittest
@@ -20,7 +20,7 @@ global_data = {
         u'last4Digits': u'5100'
     },
     u'customer': {
-        'merchantItemId': '1',
+        u'merchantCustomerId': '1',
 		u'givenName': u'Joe',
 		u'companyName': u'AppointmentGuru',
 		u'mobile': u'+27832566533',
@@ -29,7 +29,6 @@ global_data = {
 	},
     u'currency': u'ZAR',
     u'customParameters': {u'CTPE_DESCRIPTOR_TEMPLATE': u''},
-    u'customer': {u'ip': u'196.212.60.84', u'ipCountry': u'ZA'},
     u'descriptor': u'9421.3247.4530 AG01 Nedbank 3DS',
     u'id': u'8a82944a5ccfcf4c015cea66daf77583',
     u'ndc': u'9A43FEFC58248ED7FC22E0017CA0D352.sbg-vm-tx02',
@@ -160,10 +159,19 @@ class PaymentResultReceivedTestCase(TestCase):
         assert self.result.status_code == 200
 
     def test_creates_transaction(self):
-        assert Transaction.objects.count() == 1
+        cnt = Transaction.objects.count()
+        assert cnt == 1,\
+            'Expected a transaction to be created. Transaction count: {}'.format(cnt)
+
+    def test_creates_customer(self):
+        cnt = Customer.objects.count()
+        assert cnt == 1,\
+            'Expected a customer to be created. Customer count: {}'.format(cnt)
 
     def test_creates_credit_card(self):
-        assert CreditCard.objects.count() == 1
+        cnt = CreditCard.objects.count()
+        assert cnt == 1,\
+            'Expected a creditcard to be created. CreditCard count: {}'.format(cnt)
 
 
 

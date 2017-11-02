@@ -4,8 +4,8 @@ from __future__ import unicode_literals
 from django.shortcuts import render, get_object_or_404
 from django.conf import settings
 
-from .models import Transaction, Product
-from .helpers import prepare_checkout_data, save_transaction, handle_transaction_result, post_to_slack, get_receipt_context
+from .models import Transaction, Product, Customer
+from .helpers import prepare_checkout_data, handle_transaction_result, post_to_slack, get_receipt_context
 from .appointmentguru import AppointmentGuru
 
 import requests, json
@@ -74,9 +74,8 @@ def result_page(request):
 
     if payment_data.get('id', None) is not None:
         result_data = payment_result.json()
-        transaction = save_transaction(result_data)
-        customer = Customer.from_transaction_customer(result_data.get('customer', {}))
-        handle_transaction_result(transaction, customer, send_to_slack=False)
+        transaction = Transaction.from_peach_response(result_data)
+        handle_transaction_result(transaction, send_to_slack=False)
     else:
         # error
         pass

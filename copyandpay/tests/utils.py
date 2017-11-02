@@ -1,9 +1,10 @@
 '''Various utils to make testing easier'''
 
-from ..models import CreditCard, Transaction, Product
+from ..models import CreditCard, Transaction, Product, Customer, ScheduledPayment
 from django.contrib.auth import get_user_model
 from faker import Factory
 from .datas import SUCCESS_PAYMENT
+from datetime import datetime
 import random, uuid, json
 
 FAKE = Factory.create()
@@ -47,10 +48,25 @@ def create_card(owner_id=1, **kwargs):
     data.update(kwargs)
     return CreditCard.objects.create(**data)
 
+def create_scheduled_payment(date=datetime.now().date(), currency='ZAR', amount=100, run_on_creation=False):
+
+    card = create_card()
+
+    data = {
+        'card': card,
+        'scheduled_date': date,
+        'currency': currency,
+        'amount': amount,
+        'run_on_creation': run_on_creation
+    }
+    return ScheduledPayment.objects.create(**data)
+
+
 def create_transaction():
     data = SUCCESS_PAYMENT
     transaction = {
         # "user_id": user.id,
+        "customer": Customer.from_transaction_customer(data.get('customer', {})),
         "currency": data.get('currency'),
         "price": data.get('amount'),
         "transaction_id": data.get('id'),

@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.template.loader import render_to_string
-from .models import CreditCard, Transaction, ScheduledPayment
+from .models import CreditCard, Transaction, ScheduledPayment, Customer
 from appointmentguru.communicationguru import CommunicationGuru
 from slackclient import SlackClient
 from dateutil.relativedelta import *
@@ -81,63 +81,16 @@ def prepare_checkout_data(request, user=None, product=None):
 
     return data
 
-def save_card(user_id, registration_id, data):
-
-    try:
-        card = CreditCard.objects.get(registration_id=registration_id)
-    except CreditCard.DoesNotExist:
-        card = {
-            'owner_id': user_id,
-            'registration_id': registration_id,
-            'cardholder_name': data.get('holder'),
-            'expiry_month': data.get('expiryMonth'),
-            'expiry_year': data.get('expiryYear'),
-            'last_four_digits': data.get('last4Digits'),
-            'bin': data.get('bin'),
-        }
-        card = CreditCard.objects.create(**card)
-    return card
-
-def save_transaction(data):
-
-    transaction = {
-        # "user_id": user.id,
-        "currency": data.get('currency', 'ZAR'),
-        "price": data.get('amount'),
-        "transaction_id": data.get('id'),
-        "ndc": data.get('ndc'),
-        "payment_brand": data.get('paymentBrand'),
-        "payment_type": data.get('paymentType'),
-        "registration_id": data.get('registrationId'),
-        "result_code": data.get('result', {}).get('code'),
-        "result_description": data.get('result', {}).get('description'),
-        "data": json.dumps(data)
-    }
-
-    user = data.get('customer', {})
-
-    transaction = Transaction.objects.create(**transaction)
-    if data.get('card', None) is not None \
-        and user.get('merchantCustomerId', None) is not None:
-
-        card = save_card(
-            user.get('merchantCustomerId'),
-            data.get('registrationId'),
-            data.get('card'))
-        transaction.card = card
-        transaction.save()
-
-    return transaction
 
 def get_receipt_context(transaction):
-    data = transaction.merged_data
-    total = sum([float(item.get('price')) for item in data.get('cart',{}).get('items', [])])
+    data = transaction.data
+    # total = sum([float(item.get('price')) for item in data.get('cart',{}).get('items', [])])
     context = {
         'company': 'AppointmentGuru',
         'support_url': 'http://appointmentguru/help/',
         'transaction': transaction,
         'data': data,
-        'total': total,
+        'total': transaction.price,
     }
     return context
 
@@ -173,15 +126,13 @@ def handle_transaction_result(transaction, scheduled_instance=None, reschedule=T
         today = datetime.date.today()
 
         subject = '[AppointmentGuru] Your receipt for {}'.format(today.strftime('%b %Y'))
-        send_receipt(transaction, subject=subject)
+
+        send_receipt(transaction, transaction.customer, subject=subject)
 
         #re-schedule:
         next_month = today+relativedelta(months=+1)
         if reschedule:
-            ScheduledPayment.objects.create(
-                card=transaction.card,
-                scheduled_date=next_month
-            )
+            ScheduledPayment.from_transaction(transaction, next_month)
         if scheduled_instance is not None:
             scheduled_instance.status = 'success'
             scheduled_instance.save()

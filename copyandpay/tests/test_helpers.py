@@ -5,7 +5,6 @@ from django.contrib.auth.models import AnonymousUser
 
 from ..models import CreditCard
 from ..helpers import prepare_checkout_data, \
-    save_card,\
     recurring_transaction_data_from_transaction,\
     send_receipt
 
@@ -16,31 +15,6 @@ import responses, unittest
 def assert_fields(expected_fields, data):
     for field in expected_fields:
         assert data.get(field, None is not None)
-
-class SaveCardTestCase(TestCase):
-
-    def setUp(self):
-        self.card_data = {
-            'holder': 'Jane Doe',
-            'expiryMonth': 10,
-            'expiryYear': 17,
-            'last4Digits': 1234,
-            'bin': 111111,
-        }
-        self.registration_id = 1
-        self.user = create_user()
-        self.card = save_card(self.user, self.registration_id, self.card_data)
-
-    def test_creates_card(self):
-        card_count = CreditCard.objects.count()
-        assert card_count == 1, \
-            'Expected exactly 1 card. Got: {}'.format(card_count)
-
-    def test_does_not_create_duplicate_cards_and_returns_existing_card(self):
-        id = self.card.registration_id
-        card = save_card(self.user, self.registration_id, self.card_data)
-
-        assert self.card.id == card.id
 
 class PrepareCheckoutDataTestCase(TestCase):
 
@@ -112,5 +86,5 @@ class RecurringTransactionPayloadTestCase(TestCase):
             responses.POST,
             'https://communicationguru.appointmentguru.co/communications/')
 
-        send_receipt(self.transaction)
+        send_receipt(self.transaction, self.transaction.customer)
 

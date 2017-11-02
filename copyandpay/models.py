@@ -45,15 +45,19 @@ class Customer(models.Model):
 
     @classmethod
     def from_transaction_customer(cls, data, save=True):
-
-        cls.user_id = data.get('merchantCustomerId')
-        cls.name = data.get('givenName')
-        cls.mobile = data.get('mobile')
-        cls.email = data.get('email')
-        cls.company = data.get('companyName')
-        if save:
-            cls.save()
-        return cls
+        owner_id = data.get('merchantCustomerId')
+        try:
+            instance = Customer.objects.get(owner_id = owner_id)
+        except Customer.DoesNotExist:
+            instance = cls()
+            instance.owner_id = owner_id
+            instance.name = data.get('givenName')
+            instance.mobile = data.get('mobile')
+            instance.email = data.get('email')
+            instance.company = data.get('companyName')
+            if save:
+                instance.save()
+        return instance
 
 
 class CreditCard(models.Model):
@@ -71,6 +75,23 @@ class CreditCard(models.Model):
 
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def from_transaction_card_data(cls, owner_id, registration_id, data):
+        try:
+            card = CreditCard.objects.get(registration_id=registration_id)
+        except CreditCard.DoesNotExist:
+            card = {
+                'owner_id': owner_id,
+                'registration_id': registration_id,
+                'cardholder_name': data.get('holder'),
+                'expiry_month': data.get('expiryMonth'),
+                'expiry_year': data.get('expiryYear'),
+                'last_four_digits': data.get('last4Digits'),
+                'bin': data.get('bin'),
+            }
+            card = CreditCard.objects.create(**card)
+        return card
 
 RECURRANCE_RATES = [
     ('M', 'Monthly'),
@@ -94,10 +115,11 @@ class Product(models.Model):
 class Transaction(models.Model):
 
     def __str__(self):
-        return '#{} - '.format(self.transaction_id, self.customer_name)
+        return '#{}'.format(self.transaction_id)
 
     owner_id = models.CharField(max_length=128, null=True, blank=True)
     card = models.ForeignKey(CreditCard, on_delete=models.SET_NULL, related_name='card_transaction', null=True, blank=True)
+    customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, related_name='customer_transaction', null=True, blank=True)
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, related_name='product_transaction', null=True, blank=True)
 
     currency = models.CharField(max_length=6)
@@ -116,6 +138,41 @@ class Transaction(models.Model):
 
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def from_peach_response(cls, data):
+        transaction = {
+            # "user_id": user.id,
+            "currency": data.get('currency', 'ZAR'),
+            "price": data.get('amount'),
+            "transaction_id": data.get('id'),
+            "ndc": data.get('ndc'),
+            "payment_brand": data.get('paymentBrand'),
+            "payment_type": data.get('paymentType'),
+            "registration_id": data.get('registrationId'),
+            "result_code": data.get('result', {}).get('code'),
+            "result_description": data.get('result', {}).get('description'),
+            "data": json.dumps(data)
+        }
+
+        transaction = Transaction.objects.create(**transaction)
+
+        user = data.get('customer', {})
+        customer = Customer.from_transaction_customer(user)
+        transaction.customer = customer
+        transaction.save()
+
+        if data.get('card', None) is not None \
+            and user.get('merchantCustomerId', None) is not None:
+            card = CreditCard.from_transaction_card_data(
+                    user.get('merchantCustomerId'),
+                    data.get('registrationId'),
+                    data.get('card'))
+            transaction.card = card
+
+        transaction.save()
+
+        return transaction
 
     @property
     def status(self):
@@ -157,6 +214,7 @@ class Transaction(models.Model):
 
 TRANSACTION_STATUSES = [
     ('new', 'new'),
+    ('processing', 'processing'),
     ('success', 'success'),
     ('failed', 'failed'),
     ('pending', 'pending'),
@@ -177,7 +235,20 @@ class ScheduledPayment(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
 
+    @classmethod
+    def from_transaction(cls, transaction, scheduled_date):
+        return ScheduledPayment.objects.create(
+            card=transaction.card,
+            currency=transaction.currency,
+            amount=transaction.price,
+            scheduled_date=scheduled_date)
+
     def run_recurring(self):
+        '''
+        todo:
+        '''
+        self.status = 'processing'
+        self.save()
         data = {
             'authentication.userId' : settings.PEACH_USER_ID,
             'authentication.password' : settings.PEACH_PASSWORD,
@@ -195,8 +266,14 @@ class ScheduledPayment(models.Model):
         print(data)
         result = requests.post(url, data)
         if result.json().get('id', None) is not None:
+            # todo: get the actual status and update accordingly
+            self.status = 'success'
+            self.save()
+
             from .helpers import save_transaction
             transaction = save_transaction(result.json())
+            transaction.card = self.card
+            transaction.owner_id = self.card.owner_id
             transaction.save()
             return (result, transaction)
         else:
