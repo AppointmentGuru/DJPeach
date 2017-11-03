@@ -34,12 +34,12 @@ def create_product(**kwargs):
     data.update(kwargs)
     return Product.objects.create(**data)
 
-def create_card(owner_id=1, **kwargs):
+def create_card(owner_id=1, registration_id=get_uuid(), **kwargs):
 
     data = {
         "owner_id": owner_id,
         "cardholder_name": FAKE.name(),
-        "registration_id": get_uuid(),
+        "registration_id": registration_id,
         "bin": get_uuid(),
         "expiry_month": FAKE.credit_card_expire().split('/')[0],
         "expiry_year": FAKE.credit_card_expire().split('/')[1],
@@ -48,16 +48,17 @@ def create_card(owner_id=1, **kwargs):
     data.update(kwargs)
     return CreditCard.objects.create(**data)
 
-def create_scheduled_payment(date=datetime.now().date(), currency='ZAR', amount=100, run_on_creation=False):
+def create_scheduled_payment(date=datetime.now().date(), currency='ZAR', amount=100, run_on_creation=False, is_recurring=True, card_registration_id=get_uuid()):
 
-    card = create_card()
+    card = create_card(registration_id=card_registration_id)
 
     data = {
         'card': card,
         'scheduled_date': date,
         'currency': currency,
         'amount': amount,
-        'run_on_creation': run_on_creation
+        'run_on_creation': run_on_creation,
+        'is_recurring': is_recurring
     }
     return ScheduledPayment.objects.create(**data)
 

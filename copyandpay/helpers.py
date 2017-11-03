@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.template.loader import render_to_string
-from .models import CreditCard, Transaction, ScheduledPayment, Customer
+from .models import CreditCard, ScheduledPayment
 from appointmentguru.communicationguru import CommunicationGuru
 from slackclient import SlackClient
 from dateutil.relativedelta import *

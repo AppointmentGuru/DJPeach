@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from django.conf import settings
+from dateutil.relativedelta import *
 
 from django.db import models
 
@@ -31,6 +32,9 @@ import requests, json, datetime, re
 class Customer(models.Model):
     '''Cached data on the customer'''
 
+    def __str__(self):
+        return '#{}: {}'.format(self.owner_id, self.name)
+
     owner_id = models.CharField(max_length=36, blank=True, null=True)
     name = models.CharField(max_length=36, blank=True, null=True)
     company = models.CharField(max_length=36, blank=True, null=True)
@@ -45,19 +49,21 @@ class Customer(models.Model):
 
     @classmethod
     def from_transaction_customer(cls, data, save=True):
-        owner_id = data.get('merchantCustomerId')
-        try:
-            instance = Customer.objects.get(owner_id = owner_id)
-        except Customer.DoesNotExist:
-            instance = cls()
-            instance.owner_id = owner_id
-            instance.name = data.get('givenName')
-            instance.mobile = data.get('mobile')
-            instance.email = data.get('email')
-            instance.company = data.get('companyName')
-            if save:
-                instance.save()
-        return instance
+        owner_id = data.get('merchantCustomerId', None)
+        if owner_id:
+            try:
+                instance = Customer.objects.get(owner_id = owner_id)
+            except Customer.DoesNotExist:
+                instance = cls()
+                instance.owner_id = owner_id
+                instance.name = data.get('givenName')
+                instance.mobile = data.get('mobile')
+                instance.email = data.get('email')
+                instance.company = data.get('companyName')
+                if save:
+                    instance.save()
+            return instance
+        return None
 
 
 class CreditCard(models.Model):
@@ -224,6 +230,7 @@ class ScheduledPayment(models.Model):
     '''A means to schedule payments'''
 
     card = models.ForeignKey('CreditCard', null=True, blank=True, on_delete=models.SET_NULL, default=None)
+    customer = models.ForeignKey('Customer', null=True, blank=True, on_delete=models.SET_NULL, default=None)
 
     scheduled_date = models.DateField()
     status = models.CharField(max_length=10, default='new', choices=TRANSACTION_STATUSES)
@@ -231,6 +238,7 @@ class ScheduledPayment(models.Model):
     currency = models.CharField(max_length=6, default='ZAR')
     amount = models.DecimalField(decimal_places=2, max_digits=10, default=0)
 
+    is_recurring = models.BooleanField(default=True, help_text='If true, when transaction successfully completes, it will create another recurring payment 1 month from now')
     run_on_creation = models.BooleanField(default=False, help_text='If this is selected, we\'ll try run this payment immediately' )
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
@@ -239,9 +247,26 @@ class ScheduledPayment(models.Model):
     def from_transaction(cls, transaction, scheduled_date):
         return ScheduledPayment.objects.create(
             card=transaction.card,
+            customer=transaction.customer,
             currency=transaction.currency,
             amount=transaction.price,
             scheduled_date=scheduled_date)
+
+    @classmethod
+    def create_recurrance(cls, instance):
+        today = datetime.date.today()
+        next_month = today+relativedelta(months=+1)
+        fields_to_copy = ['card_id', 'customer_id', 'currency', 'amount']
+        data = {
+            'is_recurring': True,
+            'run_on_creation': False,
+            'status': 'new',
+            'scheduled_date': next_month
+        }
+        for field in fields_to_copy:
+            data[field] = getattr(instance, field)
+
+        return cls.objects.create(**data)
 
     def run_recurring(self):
         '''
@@ -270,8 +295,10 @@ class ScheduledPayment(models.Model):
             self.status = 'success'
             self.save()
 
-            from .helpers import save_transaction
-            transaction = save_transaction(result.json())
+            if self.is_recurring:
+                self.create_recurrance(self)
+
+            transaction = Transaction.from_peach_response(result.json())
             transaction.card = self.card
             transaction.owner_id = self.card.owner_id
             transaction.save()

@@ -48,3 +48,20 @@ SUCCESS_PAYMENT = {
   "timestamp": "2017-08-01 14:33:16+0000",
   "ndc": "D9864FFA660816ABDFFE22238EAFA3D3.sbg-vm-tx02"
 }
+
+RECURRING_FAILURE = {'id': '8a8294495f587757015f811733d97f74', 'paymentType': 'PA', 'result': {'code': '100.150.101', 'description': 'invalid length for specified registration id (must be 32 chars)'}, 'buildNumber': '70bd28957756bc1b3459623aeaa957711b7e9336@2017-11-02 09:13:45 +0000', 'timestamp': '2017-11-03 08:55:02+0000', 'ndc': '8a82941858969fbc01589bff431c1e14_9e0dd9e5c3b04a91a5c99101c303420c'}
+RECURRING_SUCCESS = {
+  'amount': '10.00',
+  'buildNumber': '70bd28957756bc1b3459623aeaa957711b7e9336@2017-11-02 09:13:45 +0000',
+  'currency': 'ZAR',
+  'descriptor': '4709.8902.5954 AG01 Nedbank Recur ',
+  'id': '8a82944a5f5892d0015f81218f0e506c',
+  'ndc': '8a82941858969fbc01589bff431c1e14_a4afc73f195c42b5904245528ac71d39',
+  'paymentType': 'PA',
+  'result': {
+    'code': '000.100.110',
+    'description': "Request successfully processed in 'Merchant in Integrator Test Mode'"
+  },
+  'risk': {'score': '100'},
+  'timestamp': '2017-11-03 09:06:21+0000'
+ }
