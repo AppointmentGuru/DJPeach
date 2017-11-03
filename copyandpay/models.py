@@ -167,7 +167,6 @@ class Transaction(models.Model):
         transaction.customer = customer
         transaction.save()
 
-
         if data.get('card', None) is not None \
             and user.get('merchantCustomerId', None) is not None:
             card = CreditCard.from_transaction_card_data(
@@ -175,8 +174,12 @@ class Transaction(models.Model):
                     data.get('registrationId'),
                     data.get('card'))
             transaction.card = card
+            transaction.save()
 
-        transaction.save()
+        cart = data.get('cart', {}).get('items', [])
+        if len(cart) == 1:
+            transaction.product_id = cart[0].get('merchantItemId', None)
+            transaction.save()
 
         return transaction
 
