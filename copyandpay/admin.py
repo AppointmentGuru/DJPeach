@@ -14,7 +14,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_display = ('title', 'description', 'currency', 'price')
 
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('owner_id', 'customer', 'transaction_id', 'card', 'status', 'result_code', 'result_description', 'currency', 'price')
+    list_display = ('owner_id', 'customer', 'transaction_id', 'card', 'product', 'status', 'result_code', 'result_description', 'currency', 'price')
     search_fields = ('transaction_id','registration_id',)
     # list_filter = ('status', 'result_code', 'is_initial',)
     # inlines = [ScheduledPaymentInline]
