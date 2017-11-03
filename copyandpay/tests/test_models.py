@@ -32,15 +32,23 @@ class RecurringScheduledPaymentSuccessTestCase(TestCase):
             'https://test.oppwa.com/v1/registrations/{}/payments'.format(reg_id),
             body=json.dumps(RECURRING_SUCCESS)
         )
+        responses.add(
+            responses.POST,
+            'https://communicationguru.appointmentguru.co/communications/'
+        )
+        responses.add(
+            responses.POST,
+            'https://slack.com/api/chat.postMessage',
+            body=json.dumps({}),
+            status=201,
+            content_type='application/json'
+        )
         self.scheduled_payment = create_scheduled_payment(
             card_registration_id=reg_id,
             run_on_creation=True,
             is_recurring=True)
         self.reg_id = reg_id
 
-        cc = len(responses.calls)
-        assert cc == 1,\
-            'Expected 1 call. got: {}'.format(cc)
 
     def test_it_hits_peach(self):
         '''This is verified in setup'''
@@ -61,6 +69,33 @@ class RecurringScheduledPaymentSuccessTestCase(TestCase):
         assert new_scheduled_payment.run_on_creation == False,\
             'Status should be False. Got: {}'.format(new_scheduled_payment.run_on_creation)
 
+    def test_it_sets_card_on_new_scheduled_payment(self):
+        new_scheduled_payment = ScheduledPayment.objects.last()
+        assert new_scheduled_payment.card.id == self.scheduled_payment.card.id
+
+    def test_it_sets_product_on_new_scheduled_payment(self):
+        new_scheduled_payment = ScheduledPayment.objects.last()
+        assert new_scheduled_payment.product.id == self.scheduled_payment.product.id
+
+    def test_it_sets_customer_on_new_scheduled_payment(self):
+        new_scheduled_payment = ScheduledPayment.objects.last()
+        assert new_scheduled_payment.customer.id == self.scheduled_payment.customer.id
 
     def test_it_creates_a_transaction(self):
         assert Transaction.objects.count() == 1
+
+    def test_it_sets_transaction_customer(self):
+        t = Transaction.objects.first()
+        assert t.customer.id == self.scheduled_payment.customer.id
+
+    def test_it_sets_transaction_card(self):
+        t = Transaction.objects.first()
+        assert t.card.id == self.scheduled_payment.card.id
+
+    def test_it_sends_receipt(self):
+        '''Verified in setup'''
+        pass
+
+    def test_it_posts_to_slack(self):
+        '''Verified in setup'''
+        pass

@@ -4,7 +4,6 @@ from django.conf import settings
 from dateutil.relativedelta import *
 
 from django.db import models
-
 import requests, json, datetime, re
 
 '''
@@ -168,6 +167,7 @@ class Transaction(models.Model):
         transaction.customer = customer
         transaction.save()
 
+
         if data.get('card', None) is not None \
             and user.get('merchantCustomerId', None) is not None:
             card = CreditCard.from_transaction_card_data(
@@ -231,6 +231,7 @@ class ScheduledPayment(models.Model):
 
     card = models.ForeignKey('CreditCard', null=True, blank=True, on_delete=models.SET_NULL, default=None)
     customer = models.ForeignKey('Customer', null=True, blank=True, on_delete=models.SET_NULL, default=None)
+    product = models.ForeignKey('Product', null=True, blank=True, on_delete=models.SET_NULL, default=None)
 
     scheduled_date = models.DateField()
     status = models.CharField(max_length=10, default='new', choices=TRANSACTION_STATUSES)
@@ -249,6 +250,7 @@ class ScheduledPayment(models.Model):
             card=transaction.card,
             customer=transaction.customer,
             currency=transaction.currency,
+            product=transaction.product,
             amount=transaction.price,
             scheduled_date=scheduled_date)
 
@@ -256,7 +258,7 @@ class ScheduledPayment(models.Model):
     def create_recurrance(cls, instance):
         today = datetime.date.today()
         next_month = today+relativedelta(months=+1)
-        fields_to_copy = ['card_id', 'customer_id', 'currency', 'amount']
+        fields_to_copy = ['card_id', 'customer_id', 'product_id', 'currency', 'amount']
         data = {
             'is_recurring': True,
             'run_on_creation': False,
@@ -288,7 +290,7 @@ class ScheduledPayment(models.Model):
         url = '{}/v1/registrations/{}/payments'\
                 .format(base_url, registration_id)
 
-        print(data)
+        # print(data)
         result = requests.post(url, data)
         if result.json().get('id', None) is not None:
             # todo: get the actual status and update accordingly
@@ -300,8 +302,16 @@ class ScheduledPayment(models.Model):
 
             transaction = Transaction.from_peach_response(result.json())
             transaction.card = self.card
+            transaction.customer = self.customer
+            transaction.product = self.product
             transaction.owner_id = self.card.owner_id
             transaction.save()
+
+            from .helpers import handle_transaction_result
+            handle_transaction_result(
+                transaction,
+                scheduled_instance=self)
+
             return (result, transaction)
         else:
             return (result, None)

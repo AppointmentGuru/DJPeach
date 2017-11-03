@@ -23,7 +23,7 @@ class CreditCardAdmin(admin.ModelAdmin):
     list_display = ('owner_id', 'bin', 'cardholder_name', 'expiry_month', 'expiry_year', 'last_four_digits')
 
 class ScheduledPaymentAdmin(admin.ModelAdmin):
-    list_display = ('customer', 'card', 'amount', 'status', 'scheduled_date')
+    list_display = ('customer', 'card', 'product', 'amount', 'status', 'scheduled_date')
 
 admin.site.register(Customer, CustomerAdmin)
 admin.site.register(Product, ProductAdmin)

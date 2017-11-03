@@ -34,6 +34,18 @@ def create_product(**kwargs):
     data.update(kwargs)
     return Product.objects.create(**data)
 
+def create_customer(owner_id, email=FAKE.email, name=FAKE.first_name()):
+
+    data = {
+        'owner_id': owner_id,
+        'name': name,
+        'company': FAKE.company(),
+        'email': email,
+        'mobile': '+27832566533'
+    }
+    return Customer.objects.create(**data)
+
+
 def create_card(owner_id=1, registration_id=get_uuid(), **kwargs):
 
     data = {
@@ -51,9 +63,12 @@ def create_card(owner_id=1, registration_id=get_uuid(), **kwargs):
 def create_scheduled_payment(date=datetime.now().date(), currency='ZAR', amount=100, run_on_creation=False, is_recurring=True, card_registration_id=get_uuid()):
 
     card = create_card(registration_id=card_registration_id)
-
+    customer = create_customer(1, email='info@38.co.za')
+    product = create_product()
     data = {
         'card': card,
+        'customer': customer,
+        'product': product,
         'scheduled_date': date,
         'currency': currency,
         'amount': amount,
