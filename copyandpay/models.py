@@ -285,7 +285,7 @@ class ScheduledPayment(models.Model):
             'authentication.entityId' : settings.PEACH_ENTITY_RECURRING_ID,
             "amount": self.amount,
             "currency": self.currency,
-            "paymentType": "PA",
+            "paymentType": "DB",
             "recurringType": "REPEATED"
         }
         base_url = settings.PEACH_BASE_URL
