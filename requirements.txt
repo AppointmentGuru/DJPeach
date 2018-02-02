@@ -1,4 +1,6 @@
 django==1.11
+django-filter==1.0.4
+djangorestframework==3.6.3
 gunicorn==19.7.1
 psycopg2==2.7.1
 django-storages==1.6.3
@@ -6,6 +8,8 @@ boto==2.48.0
 slackclient==1.0.6
 python-dateutil
 appointmentguru_helpers
+
+kong_oauth==0.1
 
 requests
 responses

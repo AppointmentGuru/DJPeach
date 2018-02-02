@@ -1,24 +1,10 @@
-"""peachpayments URL Configuration
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/1.11/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  url(r'^$', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  url(r'^$', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.conf.urls import url, include
-    2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
-"""
-from django.conf.urls import url
+from django.conf.urls import url, include
 from django.contrib import admin
-from copyandpay import views
+from copyandpay import views, api
 
 urlpatterns = [
     url(r'^$', views.index, name='products_page'),
+    url(r'^api/', include(api.router.urls)),
     url(r'^pay/(?P<product_id>[\w-]+)/$', views.payment_page, name='payment_page'),
     url(r'^transaction/(?P<id>[\w-]+)/$', views.transaction_receipt, name='transaction_receipt'),
     url(r'^result/$', views.result_page, name='result_page'),

@@ -35,5 +35,18 @@ db_password = os.environ.get('DATABASE_PASSWORD', False)
 if db_password:
     DATABASES.get('default').update({'PASSWORD': db_password})
 
-COMMUNICATIONGURU_URL = 'https://communicationguru.appointmentguru.co'
+COMMUNICATIONGURU_URL = 'http://communicationguru'
 DEFAULT_FROM_EMAIL = 'support@appointmentguru.co'
+
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.DjangoFilterBackend',),
+    # 'DEFAULT_PERMISSION_CLASSES': (
+    #     'rest_framework.permissions.IsAuthenticated',
+    # ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
+        'kong_oauth.drf_authbackends.KongDownstreamAuthHeadersAuthentication',
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 100
+}
