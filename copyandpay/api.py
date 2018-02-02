@@ -23,7 +23,7 @@ class TransactionSerializer(serializers.ModelSerializer):
         fields = '__all__'
         ordering = ('-created_date',)
 
-class TransactionViewSet(viewsets.ModelViewSet):
+class TransactionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Transaction.objects.all().order_by('-created_date')
     serializer_class = TransactionSerializer
 
@@ -36,7 +36,7 @@ class ScheduledPaymentSerializer(serializers.ModelSerializer):
         fields = '__all__'
         ordering = ('-created_date',)
 
-class ScheduledPaymentViewSet(viewsets.ModelViewSet):
+class ScheduledPaymentViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ScheduledPayment.objects.all().order_by('-created_date')
     serializer_class = ScheduledPaymentSerializer
     filter_backends = (IsCustomerFilterBackend,)
