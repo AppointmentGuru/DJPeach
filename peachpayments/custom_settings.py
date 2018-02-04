@@ -35,7 +35,8 @@ db_password = os.environ.get('DATABASE_PASSWORD', False)
 if db_password:
     DATABASES.get('default').update({'PASSWORD': db_password})
 
-COMMUNICATIONGURU_URL = 'http://communicationguru'
+COMMUNICATIONGURU_URL = 'https://communicationguru.appointmentguru.co'
+# COMMUNICATIONGURU_URL = 'http://communicationguru'
 DEFAULT_FROM_EMAIL = 'support@appointmentguru.co'
 
 REST_FRAMEWORK = {
