@@ -2,9 +2,9 @@ version: "3"
 services:
   db:
     image: postgres:9.5
-  sut:
+  web:
     build: .
-    command: sh /code/test.sh
+    command: sh /code/run_tests.sh
     depends_on:
       - db
     volumes:

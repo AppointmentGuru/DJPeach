@@ -1,0 +1,74 @@
+image: docker
+
+stages:
+  - test
+  - build
+  - deploy
+
+test:
+  image: docker
+  stage: test
+  services:
+    - docker:dind
+  before_script:
+  - docker info
+  - apk update
+  - apk upgrade
+  - apk add python python-dev py-pip build-base
+  - pip install docker-compose
+  script:
+    - docker-compose -f docker-compose.test.yml run --rm web sh /code/run_tests.sh
+  coverage: '/TOTAL.+ ([0-9]{1,3}%)/'
+
+build:
+  image: docker
+  services:
+    - docker:dind
+  stage: build
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+
+deploy_v2:
+  image: docker
+  stage: deploy
+  services:
+    - docker:dind
+  before_script:
+  - docker info
+  - apk update
+  - apk upgrade
+  - apk add python python-dev py-pip build-base
+  - pip install docker-compose
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker pull registry.gitlab.com/appointmentguru/ops/playbooks:master
+    - docker-compose -f docker-compose.deploy.yml run --rm ansible ansible-playbook deploy_service.yml -i inventory/digital_ocean.py --limit=server_swarm_manager
+  environment:
+    name: v2-$CI_COMMIT_REF_SLUG
+    url: https://$CI_PROJECT_NAME-$CI_COMMIT_REF_SLUG.appointmentguru.co
+  only:
+    - v2
+
+deploy_v1:
+  image: docker
+  stage: deploy
+  services:
+    - docker:dind
+  before_script:
+  - docker info
+  - apk update
+  - apk upgrade
+  - apk add python python-dev py-pip build-base
+  - pip install docker-compose
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker pull registry.gitlab.com/appointmentguru/ops/playbooks:master
+    - docker-compose -f docker-compose.deploy.yml run --rm ansible ansible-playbook deploy_service.yml -i inventory/digital_ocean.py --limit=server_swarm_manager
+  environment:
+    name: v1-$CI_COMMIT_REF_SLUG
+    url: https://$CI_PROJECT_NAME-$CI_COMMIT_REF_SLUG.appointmentguru.co
+  only:
+    - master
+
